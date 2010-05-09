@@ -1,0 +1,72 @@
+module utils
+
+	imports include/Yuml
+	  		libstratego-lib
+  			libstratego-gpp
+  			libstratego-aterm
+  			lib/editor-common.generated
+
+    strategies
+
+      show-pretty-printed-yuml :
+        (selected, position, ast, path, project-path) -> (filename, result-string)
+        with
+          filename := <guarantee-extension(|"yml")> path;
+          result-string := <pp-yuml> selected
+
+	rules
+		  pp-yuml = alltd(pp)
+		  //To yuml lines seperately
+		  pp : YUML(line*) -> $[[<map(pp-yuml);separate-by(|"\n")> line*]]
+		  
+		  //each line is formed either by entity definition ([Customer]) or a relation between two entities ([Customer]->[Blog])
+		  pp : RelationDefinition(relation) -> $[[<pp> relation]]
+		  pp : EntityDefinition(entity) -> $[[<pp> entity]]
+		  
+		  //the behavious of note in yuml is exaclty the same with entity. only difference is in syntax
+		  pp : EntityOrNote(entityornote) -> $[$[$[<pp> entityornote]$]$]		 
+		  
+		  //relation is defined between two entites (leftent, rightent). each relation in addition to connection type(aggregation, composition, ...)
+		  //can have labels.
+		  pp : Relation(leftent, leftlabel, conn, rightlabel, rightent) -> $[[<pp> leftent][<pp> leftlabel][<pp> conn][<pp> rightlabel][<pp> rightent]]
+		 
+		  //each entity can be formed by background color specification and list of fields
+		  pp : Entity(classname*, splash, detail*) -> $[[<separate-by(|" "); concat-strings> classname*][<pp> splash][<map(pp);concat-strings> detail*]]
+		  pp : Note(note*) -> $[note: [<separate-by(|" "); concat-strings> note*]]
+		  
+		  //last have field in entity definition can hold semicolon or not. these two definition support this fact
+		  pp : EntityDetails(notenddetail*, enddetail) -> $[|[<map(pp);concat-strings> notenddetail*][<pp> enddetail]]
+		  pp : EntityDetails(notenddetail*) -> $[|[<map(pp);concat-strings> notenddetail*]]
+		  
+		  //inner fields (not the last one) should carry semicolon
+		  pp : NotEndPropertyOrMethod(name*, pth) -> $[[<separate-by(|" "); concat-strings> name*][<pp> pth];]
+		  pp : EndPropertyOrMethod(name*, pth) ->  $[[<separate-by(|" "); concat-strings> name*][<pp> pth]]
+		  
+		  //the difference between method and normal attribute is only paranthesis
+		  pp : Method() -> $[()]
+		  pp : Splash(color) -> $[{bg:[color]}]
+		  
+		  //connector specifies relation type. It can also contain cardinality. 
+		  pp : Connector(reltypleft, cardleft, sep, cardright, reltypright) -> $[[<pp> reltypleft][<pp> cardleft][<pp> sep][<pp> cardright][<pp> reltypright ]]
+			
+		  //cardinality can be defined as range (1..2 or simple integer). * is declared in label for simplicity		
+		  pp : Range(begin, end) -> $[[begin]..[end]]
+		  pp : Integer(int) -> int
+		  
+		  //different kind of relations
+		  pp : SeperatorDependency() -> $[-.-]
+		  pp : SeperatorSimple() -> $[-]
+		  pp : RightDirection() -> $[>]
+		  pp : LeftDirection() -> $[<]
+		  pp : Aggregation() -> $[+]
+		  pp : Composition() -> $[++]
+		  pp : Inheritance() -> $[^]
+		  
+		  //label can contain multi words sepreated by space
+		  pp : Label(label*) -> <separate-by(|" "); concat-strings> label*
+		 
+		  pp : None() -> $[]		 
+		  pp : Some(t) -> <pp>t
+		 
+
+		  
