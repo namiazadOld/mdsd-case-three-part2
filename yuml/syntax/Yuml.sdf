@@ -1,0 +1,47 @@
+%% Grammar for the Yuml language
+%% By default, based on an example "entities" syntax
+module Yuml
+
+imports Common
+
+exports
+
+  context-free start-symbols
+    Start
+
+  context-free syntax
+  	
+    Line*       													-> Start {cons("YUML")}
+    EntityOrNote      												-> Line {cons("EntityDefinition")}
+    Relation   														-> Line {cons("RelationDefinition")}
+    
+    Note															-> EntityOrNote{cons("EntityOrNote")}																
+    Entity  														-> EntityOrNote{cons("EntityOrNote")}
+    
+    "[" "note" ":" ID+ "]" 											-> Note{cons("Note")}
+    "[" ID+ Splash?("|"EntityDetails)* "]"  						-> Entity{cons("Entity")}	
+    NotEndPropertyOrMethod* EndPropertyOrMethod						-> EntityDetails{cons("EntityDetails")}
+    NotEndPropertyOrMethod+						    				-> EntityDetails{cons("EntityDetails")}
+    ID+ Method? ";"												    -> NotEndPropertyOrMethod{cons("NotEndPropertyOrMethod")}
+    ID+	Method?														-> EndPropertyOrMethod{cons("EndPropertyOrMethod")}
+    "{" "bg" ":" ID "}"											    -> Splash{cons("Splash")}
+    "()"                                                            -> Method{cons("Method")}
+    EntityOrNote Label? Connector Label? EntityOrNote				-> Relation{cons("Relation")}
+    INT																-> Cardinality{cons("Integer")}
+    
+    INT ".." INT													-> Cardinality{cons("Range")}
+    LABEL+															-> Label{cons("Label")}
+    RelationType? Cardinality? Seperator Cardinality? RelationType?	-> Connector{cons("Connector")}
+    "^"																-> Connector{cons("Inheritance")}
+    "-"																-> Seperator{cons("SeperatorSimple")} 
+    "-.-"															-> Seperator{cons("SeperatorDependency")} 
+    "<" 															-> RelationType{cons("LeftDirection")}
+    ">" 															-> RelationType{cons("RightDirection")}
+    "<>" 															-> RelationType{cons("Aggregation")}
+    "+" 															-> RelationType{cons("Aggregation")}
+    "++"															-> RelationType{cons("Composition")}
+   
+
+    						
+    
+    
